@@ -1,107 +1,60 @@
-  const int temp_trans_pin = A0, Heater_pin = 13, FAN_pin = 6;
-   float MinTemp = 5, MaxTemp = 25;
 #include <LiquidCrystal.h>
-LiquidCrystal LCD(12, 11, 5, 4, 3, 2);
+LiquidCrystal lcd(2,3,4,5,6,7);
+int tempPin = A0; 
+int fan = 11; 
+int led = 8; 
+int temp;
+int tempMin = 10; 
+int tempMax = 60; 
+int fanSpeed;
+int fanLCD;
+int a;
 
 void setup() {
-      LCD.begin(16, 2);
-    pinMode(Heater_pin, OUTPUT);//LED in our case
-    pinMode(FAN_pin, OUTPUT);
-    
-  // Display the desired range of temperature
-    
-    LCD.print("Room temp(C):");
-    LCD.setCursor(2,1);
-    LCD.print(MinTemp); LCD.print("-");LCD.print(MaxTemp);
-    
-    delay(2000);
-
-  // put your setup code here, to run once:
+pinMode(fan, OUTPUT);
+pinMode(led, OUTPUT);
+pinMode(tempPin, INPUT);
+lcd.begin(16,2);
+Serial.begin(9600);
 }
 
 void loop() {
-  float Eqv_volt, SensorTemp;
- 
- // Read voltage and convert to temperature (Celsius)
-   
-   Eqv_volt = analogRead(temp_trans_pin) * 5.0 / 1023;
-   SensorTemp = 100.0 * Eqv_volt-50.0;
-    
-  // Display the sensor reading
-   
-    LCD.clear();
-    LCD.print("Sensor reading:");
-    LCD.setCursor(2,1);
-    LCD.print(SensorTemp); LCD.print(" C");
-   
-    delay(2000);
-  
- /*Compare the sensor reading with the range of
-  acceptable temperatures*/
-  
-   if(SensorTemp > MaxTemp){
-      LCD.clear();
-      LCD.print("temp is HIGHER!");//higher than the max
-     
-      /*Turn on FAN (dc motor)! to regulate the temp.
-       Increase FAN speed at a slow rate*/
-     
-      LCD.setCursor(0, 1);LCD.print("Turn on FAN!");
-      for( int i = 0; i <= 255; i++ ) {
-        analogWrite(FAN_pin, i);
-       }
-       delay(2000);
-     
-       LCD.clear();
-       LCD.print("Now temp is OK!");
-       LCD.setCursor(0, 1);
-       LCD.print("Turn off FAN!");
-     
-  // Turn off FAN slowly
-       for( int i = 255; i >= 0; i-- ) {
-        analogWrite(FAN_pin, i);
-       }
-        delay(2000);
-       }
-  else if(SensorTemp < MinTemp){
-      LCD.clear();
-      LCD.print("temp is LOWER!");//Less than the mini
-      LCD.setCursor(0, 1);
-      LCD.print("Turn on HEATER!");
-    
-     //Turn the heater ON, LED in our case 
-    
-      digitalWrite(Heater_pin, HIGH);
-    
-      delay(3000);
-    
-      LCD.clear();
-      LCD.print("Now temp is OK!");
-      LCD.setCursor(0, 1);
-      LCD.print("Turn off HEATER!");
-    
-      delay(1000);
-    
-      digitalWrite(Heater_pin, LOW);
-      LCD.clear();
-      }
-  else if(SensorTemp > MinTemp && SensorTemp < MaxTemp){/*Now temperature is perfect.
-       That is,it is in the desired range. Hence no need of changes!!*/
-      LCD.clear();
-      LCD.print("Temp is NORMAL!");LCD.setCursor(2,1);
-      LCD.print("Turn off all!");
-    
-      delay(1000);
-      LCD.clear();
-   }
-  else {
-      LCD.clear();
-      LCD.print("Something went");
-      LCD.setCursor(2,1); LCD.print("WRONG in the ckt");
-      delay(1000);
-      LCD.clear();
-    }
-    delay(1000);
+a=analogRead(A0);
+temp=a/4.66;
+Serial.println(temp);
 
-  // put your main code here, to run repeatedly:
+if(temp<tempMin) 
+{
+fanSpeed = 0;
+analogWrite(fan, fanSpeed);
+fanLCD=0;
+digitalWrite(fan, LOW);
+}
+
+if((temp >= tempMin) && (temp <= tempMax)) 
+{
+fanSpeed = 45+((temp - tempMin)*4.2) ;
+
+fanLCD = map(temp, tempMin, tempMax, 0, 100); 
+analogWrite(fan, fanSpeed); 
+}
+ 
+if(temp > tempMax)
+{
+digitalWrite(led, HIGH); 
+}
+else 
+{
+digitalWrite(led, LOW);
+}
+ 
+lcd.print("TEMP: ");
+lcd.print(temp); 
+lcd.print("C ");
+lcd.setCursor(0,1);
+lcd.print("FANS: ");
+lcd.print(fanLCD); 
+lcd.print("%");
+delay(200);
+lcd.clear();
 }
